@@ -8,7 +8,17 @@ input <- list(
   nrounds = 50,
   learning_rate = 0.3,
   
-  input_predict="Outcome"
+  input_predict="Outcome",
+  
+  
+  "shapley_input Pregnancies"=1,
+  "shapley_input Glucose"=1,
+  "shapley_input BloodPressure"=1,
+  "shapley_input SkinThickness"=1,
+  "shapley_input Insulin"=1,
+  "shapley_input BMI" =1,
+  "shapley_input DiabetesPedigreeFunction"=1,
+  "shapley_input Age" =1
   
 )
 

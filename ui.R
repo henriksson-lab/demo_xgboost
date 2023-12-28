@@ -62,9 +62,16 @@ tab_trees <- fluidPage(
 )
 
 tab_shapley <- fluidPage(
-  plotUI(), #######
-                         
-  plotOutput(outputId = "plotShapley", height = "400px")
+  fluidRow(
+    column(4,
+           div(class = "label-left",
+               uiOutput("shapleyInput"), 
+           )
+    ),
+    column(8,
+           plotOutput(outputId = "plotShapley", height = "400px")
+    )
+  )
 )
 
 tab_convergence <- fluidPage(

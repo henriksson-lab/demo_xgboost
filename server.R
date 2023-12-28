@@ -1,6 +1,8 @@
 library(plotly)
 library(Cairo)
 library(xgboost)
+library(SHAPforxgboost)
+
 options(shiny.usecairo=T)
 
 
@@ -70,6 +72,9 @@ server <- function(input, output, session) {
   
   
   
+  ##############################################################################
+  ########### XGboost solver ###################################################
+  ##############################################################################
   
   solution <- reactive({    
     
@@ -107,7 +112,8 @@ server <- function(input, output, session) {
     list(
       model=model,
       indata=thedat,
-      pred=pred
+      pred=pred,
+      all_param_name=all_param_name
     )
     
   })
@@ -215,6 +221,81 @@ server <- function(input, output, session) {
     sol <- solution()
     importance_matrix <- xgb.importance(model = sol$model)
     xgb.plot.importance(importance_matrix = importance_matrix)
+  })
+  
+  
+  
+  
+  ##############################################################################
+  ########### Shapley tab ######################################################
+  ##############################################################################
+  
+  ############# Update what shapley input boxes are available
+  observeEvent(c(input$input_ds, input$input_predict),{
+    thedat <- getDataTable()
+    numparam <- ncol(thedat)-1
+    all_param_name <- colnames(thedat)[colnames(thedat) != input$input_predict]
+    
+    ######### Side bar --- all prior sliders. these must be made reactive
+    #https://mastering-shiny.org/action-dynamic.html#multiple-controls
+    
+    all_param_input <- list()
+    for(i in 1:length(all_param_name)){
+      pname <- all_param_name[i]
+      storeas <- paste("shapley_input", pname)
+      param_vals <- thedat[,pname]
+      
+      param_range <- range(param_vals)
+      dx <- param_range[2]-param_range[1]
+      param_range[1] <- param_range[1] - dx
+      param_range[2] <- param_range[2] + dx
+      
+      all_param_input[[storeas]] <- sliderInput(
+        storeas, label = paste(pname, ":"),
+        min = param_range[1], value = param_range[1], max = param_range[2]
+      )
+      
+    }
+    output$shapleyInput <- renderUI(all_param_input)
+  })
+  
+  ### Get input data to apply shapley to
+  getShapleyIn <- function(){
+    sol <- solution()
+    input_data <- c()
+    for(n in sol$all_param_name){
+      input_data <- c(input_data,input[[paste("shapley_input",n)]])
+    }
+    input_data <- matrix(input_data, nrow=1)
+    colnames(input_data) <- sol$all_param_name
+    input_data
+  }
+  
+  
+  output$plotShapley <- renderPlot({
+    sol <- solution()
+    
+    if(length(sol$all_param_name)>0){
+      input_data <- getShapleyIn()
+      
+      # To return the SHAP values and ranked features by mean|SHAP|
+      shap_values <- shap.values(xgb_model = sol$model, X_train = input_data)
+      
+      # Keep the order vs input parameters
+      scores <- shap_values$mean_shap_score[sol$all_param_name]
+      scores <- data.frame(
+        param=names(scores),
+        w=scores
+      )
+      scores$param <- factor(scores$param, levels = scores$param)
+      
+      ggplot(scores, aes(param,w)) + geom_bar(stat = "identity") + coord_flip() +
+        xlab("Weight") + ylab("Parameter")      
+    } else {
+      ggplot()
+    }
+    
+
   })
   
   
