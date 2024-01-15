@@ -4,7 +4,7 @@ FROM rocker/shiny:latest
 
 RUN apt-get update && \
     apt-get upgrade -y && \
-    apt-get install -y git libxml2-dev libmagick++-dev && \
+    apt-get install -y git libxml2-dev libmagick++-dev libglpk40 && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
