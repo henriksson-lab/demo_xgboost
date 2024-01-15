@@ -66,8 +66,6 @@ server <- function(input, output, session) {
     ######### Side bar
     updateSliderInput(session, "num_training_point", min=0, max=nrow(thedat), value = nrow(thedat), step = 1)
     updateSelectizeInput(session, 'input_predict', choices = colnames(thedat), server = TRUE, selected="Outcome")
-    
-
   })
   
   
